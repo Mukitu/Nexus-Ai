@@ -67,7 +67,7 @@ export function Header() {
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
               <User className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-sm font-medium hidden sm:block">Mukitu</span>
+            <span className="text-sm font-medium hidden sm:block">Hey</span>
           </button>
         </div>
       </div>
