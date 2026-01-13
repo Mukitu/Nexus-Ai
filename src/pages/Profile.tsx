@@ -65,7 +65,7 @@ export default function Profile() {
                 <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-gradient-to-br from-primary to-primary-glow p-1">
                 <div className="w-full h-full rounded-xl bg-card flex items-center justify-center overflow-hidden">
            <img
-        src="profile.png"
+        src="mypic.jpeg"
         alt="Profile"
         className="w-full h-full object-cover rounded-xl"
             />
