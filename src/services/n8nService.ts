@@ -19,7 +19,7 @@ export interface AIResponse {
 // -------------------- 1. AI ASSISTANT -------------------- //
 // Gemini + DeepSeek dual AI integration
 // Replace the URL below with your AI webhook
-const AI_WEBHOOK_URL = 'http://localhost:5678/webhook/gemini-webhook'; // <-- Enter your URL here
+const AI_WEBHOOK_URL = 'http://localhost:5678/webhook/23030f54-6f01-4ed3-be3c-e3237f08f5e0/chat'; // <-- Enter your URL here
 
 // -------------------- GENERIC WEBHOOK CALLER -------------------- //
 async function callWebhook<T>(endpoint: string, payload: object, baseUrl?: string): Promise<T> {
