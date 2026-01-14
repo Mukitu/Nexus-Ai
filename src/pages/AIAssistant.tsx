@@ -1,17 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  Send,
-  Bot,
-  User,
-  Sparkles,
-  RefreshCw,
-  Copy,
-  Check,
-  Mic,
-  MicOff,
-  ToggleLeft,
-  ToggleRight,
-} from 'lucide-react';
+import { Send, Bot, User, Sparkles, Copy, Check, Mic, MicOff } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { cn } from '@/lib/utils';
@@ -23,9 +11,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  model?: 'gemini' | 'deepseek';
-  alternativeResponse?: string;
-  alternativeModel?: 'gemini' | 'deepseek';
+  model?: 'gemini';
 }
 
 const suggestedPrompts = [
@@ -39,7 +25,6 @@ export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showAlternative, setShowAlternative] = useState<{ [key: string]: boolean }>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -67,13 +52,11 @@ export default function AIAssistant() {
     setIsLoading(true);
 
     try {
-      // Convert messages to API format
       const apiMessages: AIMessage[] = [
         ...messages.map(m => ({ role: m.role, content: m.content })),
-        { role: 'user' as const, content: userMessage.content },
+        { role: 'user', content: userMessage.content },
       ];
 
-      // Call n8n webhook (or mock if not configured)
       const response = await sendAIMessage(apiMessages);
 
       const assistantMessage: Message = {
@@ -81,9 +64,7 @@ export default function AIAssistant() {
         role: 'assistant',
         content: response.content,
         timestamp: new Date(),
-        model: response.model,
-        alternativeResponse: response.alternativeContent,
-        alternativeModel: response.alternativeModel,
+        model: 'gemini',
       };
       
       setMessages((prev) => [...prev, assistantMessage]);
@@ -101,13 +82,6 @@ export default function AIAssistant() {
     setCopiedId(id);
     toast.success('Copied to clipboard');
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const toggleAlternative = (messageId: string) => {
-    setShowAlternative((prev) => ({
-      ...prev,
-      [messageId]: !prev[messageId],
-    }));
   };
 
   const handleVoiceInput = () => {
@@ -155,7 +129,7 @@ export default function AIAssistant() {
       <div className="animate-fade-in h-[calc(100vh-8rem)] flex flex-col">
         <PageHeader
           title="AI Personal Assistant"
-          description="Powered by Gemini & DeepSeek with intelligent response selection"
+          description="Powered by Gemini with intelligent responses"
           badge="AI"
         />
 
@@ -220,30 +194,11 @@ export default function AIAssistant() {
                           : 'bg-muted'
                       )}
                     >
-                      <p className="whitespace-pre-wrap text-left">
-                        {showAlternative[message.id] && message.alternativeResponse
-                          ? message.alternativeResponse
-                          : message.content}
-                      </p>
+                      <p className="whitespace-pre-wrap text-left">{message.content}</p>
                     </div>
                     {message.role === 'assistant' && (
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-muted-foreground">
-                          {message.model === 'gemini' ? 'Gemini' : 'DeepSeek'}
-                        </span>
-                        {message.alternativeResponse && (
-                          <button
-                            onClick={() => toggleAlternative(message.id)}
-                            className="flex items-center gap-1 text-xs text-primary hover:underline"
-                          >
-                            {showAlternative[message.id] ? (
-                              <ToggleRight className="w-4 h-4" />
-                            ) : (
-                              <ToggleLeft className="w-4 h-4" />
-                            )}
-                            {showAlternative[message.id] ? 'Show primary' : 'View alternative'}
-                          </button>
-                        )}
+                        <span className="text-xs text-muted-foreground">Gemini</span>
                         <button
                           onClick={() => handleCopy(message.content, message.id)}
                           className="p-1 hover:bg-muted rounded"
@@ -295,11 +250,7 @@ export default function AIAssistant() {
                   isListening && 'bg-primary text-primary-foreground'
                 )}
               >
-                {isListening ? (
-                  <MicOff className="w-5 h-5" />
-                ) : (
-                  <Mic className="w-5 h-5" />
-                )}
+                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
               <div className="flex-1 relative">
                 <textarea
@@ -325,7 +276,7 @@ export default function AIAssistant() {
               </button>
             </div>
             <p className="text-xs text-muted-foreground text-center mt-3">
-              AI responses are generated via n8n webhook integration. Your data stays local.
+              AI responses are generated via n8n Gemini webhook integration. Your data stays local.
             </p>
           </div>
         </div>
