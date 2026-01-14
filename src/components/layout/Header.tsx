@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Search, Moon, Sun, Globe, Bell, User } from 'lucide-react';
+import {
+  Search,
+  Moon,
+  Sun,
+  Globe,
+  Bell,
+  User,
+  Menu,
+} from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -10,8 +18,20 @@ export function Header() {
   const [searchFocused, setSearchFocused] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-background/80 backdrop-blur-xl border-b border-border">
-      <div className="flex items-center justify-between h-16 px-6">
+    <header className="sticky top-0 z-20 w-full bg-background/80 backdrop-blur-xl border-b border-border">
+      <div className="flex items-center gap-3 h-16 px-4 sm:px-6">
+
+        {/* Mobile Menu Button */}
+        <button
+          className="lg:hidden p-2 rounded-md btn-ghost"
+          onClick={() => {
+            const event = new Event('open-sidebar');
+            window.dispatchEvent(event);
+          }}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
         {/* Search */}
         <div className="flex-1 max-w-xl">
           <div
@@ -24,7 +44,7 @@ export function Header() {
             <input
               type="text"
               placeholder={t('search')}
-              className="input-field pl-10 py-2"
+              className="input-field pl-10 py-2 w-full"
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
             />
@@ -32,15 +52,18 @@ export function Header() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 ml-4">
+        <div className="flex items-center gap-1 sm:gap-2">
+
           {/* Language Switcher */}
           <button
             onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
-            className="btn-ghost"
+            className="btn-ghost flex items-center gap-1 px-2"
             title="Switch Language"
           >
             <Globe className="w-5 h-5" />
-            <span className="text-sm font-medium uppercase">{language}</span>
+            <span className="text-sm font-medium uppercase hidden sm:block">
+              {language}
+            </span>
           </button>
 
           {/* Theme Toggle */}
@@ -63,11 +86,13 @@ export function Header() {
           </button>
 
           {/* Profile */}
-          <button className="flex items-center gap-3 btn-ghost pl-2 pr-3">
+          <button className="flex items-center gap-2 btn-ghost pl-2 pr-2 sm:pr-3">
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
               <User className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-sm font-medium hidden sm:block">Hey</span>
+            <span className="text-sm font-medium hidden sm:block">
+              Hey
+            </span>
           </button>
         </div>
       </div>
