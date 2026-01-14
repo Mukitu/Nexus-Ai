@@ -1,5 +1,8 @@
+// ==========================================
 // n8n Webhook Integration Service
-// Replace the webhook URLs with your actual n8n webhook endpoints
+// All features included: AI Assistant, Decision, Document, Report, Learning Plan, CV Optimization
+// Clear comments + placeholders for your production webhook URLs
+// ==========================================
 
 export interface AIMessage {
   role: 'user' | 'assistant' | 'system';
@@ -13,24 +16,17 @@ export interface AIResponse {
   alternativeModel?: 'gemini' | 'deepseek';
 }
 
-// Get webhook URL from localStorage settings
-const getWebhookUrl = (): string | null => {
-  return localStorage.getItem('n8n_webhook_url');
-};
+// -------------------- 1. AI ASSISTANT -------------------- //
+// Gemini + DeepSeek dual AI integration
+// Replace the URL below with your AI webhook
+const AI_WEBHOOK_URL = 'http://localhost:5678/webhook/gemini-webhook'; // <-- Enter your URL here
 
-// Generic webhook caller
-async function callWebhook<T>(endpoint: string, payload: object): Promise<T> {
-  const baseUrl = getWebhookUrl();
-  
-  if (!baseUrl) {
-    throw new Error('n8n webhook URL not configured. Please set it in Settings.');
-  }
-
-  const response = await fetch(`${baseUrl}/${endpoint}`, {
+// -------------------- GENERIC WEBHOOK CALLER -------------------- //
+async function callWebhook<T>(endpoint: string, payload: object, baseUrl?: string): Promise<T> {
+  const url = baseUrl ? `${baseUrl}/${endpoint}` : endpoint;
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
 
@@ -41,22 +37,14 @@ async function callWebhook<T>(endpoint: string, payload: object): Promise<T> {
   return response.json();
 }
 
-// AI Chat - Parallel Gemini + DeepSeek with best response selection
+// -------------------- AI CHAT -------------------- //
 export async function sendAIMessage(messages: AIMessage[]): Promise<AIResponse> {
-  const webhookUrl = getWebhookUrl();
-  
-  if (!webhookUrl) {
-    // Return mock response if webhook not configured
-    return mockAIResponse(messages);
-  }
-
   try {
-    // Call n8n webhook which handles parallel AI calls
     const response = await callWebhook<{
       primary: { content: string; model: string };
       alternative: { content: string; model: string };
       selectedModel: string;
-    }>('ai-chat', { messages });
+    }>('ai-chat', { messages }, AI_WEBHOOK_URL);
 
     return {
       content: response.primary.content,
@@ -70,158 +58,95 @@ export async function sendAIMessage(messages: AIMessage[]): Promise<AIResponse> 
   }
 }
 
-// Decision Engine Analysis
-export async function analyzeDecision(problem: string): Promise<{
-  pros: string[];
-  cons: string[];
-  risks: string[];
-  benefits: string[];
-  recommendation: string;
-  confidence: number;
-}> {
-  const webhookUrl = getWebhookUrl();
-  
-  if (!webhookUrl) {
-    return mockDecisionAnalysis(problem);
-  }
+// -------------------- 2. DECISION ANALYSIS -------------------- //
+// For analyzing pros, cons, risks, benefits
+// Replace URL here if you have a specific decision-analysis webhook
+const DECISION_WEBHOOK_URL = 'http://localhost:5678/webhook/gemini-webhook'; // <-- Enter your URL here
 
+export async function analyzeDecision(problem: string) {
   try {
-    return await callWebhook('decision-analysis', { problem });
+    return await callWebhook(DECISION_WEBHOOK_URL, { problem });
   } catch (error) {
     console.error('Decision analysis error:', error);
     return mockDecisionAnalysis(problem);
   }
 }
 
-// Document Analysis
-export async function analyzeDocument(content: string): Promise<{
-  summary: string;
-  keyPoints: string[];
-  actionItems: string[];
-  sentiment: 'positive' | 'neutral' | 'negative';
-  wordCount: number;
-  readingTime: string;
-}> {
-  const webhookUrl = getWebhookUrl();
-  
-  if (!webhookUrl) {
-    return mockDocumentAnalysis(content);
-  }
+// -------------------- 3. DOCUMENT ANALYSIS -------------------- //
+// Analyze document content (summary, key points, sentiment, etc.)
+// Replace URL here if you have a specific document-analysis webhook
+const DOCUMENT_WEBHOOK_URL = 'http://localhost:5678/webhook/document-analysis'; // <-- Enter your URL here
 
+export async function analyzeDocument(content: string) {
   try {
-    return await callWebhook('document-analysis', { content });
+    return await callWebhook(DOCUMENT_WEBHOOK_URL, { content });
   } catch (error) {
     console.error('Document analysis error:', error);
     return mockDocumentAnalysis(content);
   }
 }
 
-// Report Analysis
-export async function analyzeReport(fileData: string, fileName: string): Promise<{
-  overview: string;
-  highlights: Array<{ title: string; value: string; trend: string; change: string }>;
-  insights: string[];
-  recommendations: string[];
-  risks: string[];
-}> {
-  const webhookUrl = getWebhookUrl();
-  
-  if (!webhookUrl) {
-    return mockReportAnalysis();
-  }
+// -------------------- 4. REPORT ANALYSIS -------------------- //
+// Analyze uploaded report files
+// Replace URL here if you have a specific report-analysis webhook
+const REPORT_WEBHOOK_URL = 'http://localhost:5678/webhook/report-analysis'; // <-- Enter your URL here
 
+export async function analyzeReport(fileData: string, fileName: string) {
   try {
-    return await callWebhook('report-analysis', { fileData, fileName });
+    return await callWebhook(REPORT_WEBHOOK_URL, { fileData, fileName });
   } catch (error) {
     console.error('Report analysis error:', error);
     return mockReportAnalysis();
   }
 }
 
-// Learning Plan Generation
-export async function generateLearningPlan(skill: string): Promise<{
-  skill: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
-  estimatedTime: string;
-  roadmap: Array<{
-    id: string;
-    title: string;
-    description: string;
-    duration: string;
-    resources: string[];
-    completed: boolean;
-  }>;
-  tips: string[];
-}> {
-  const webhookUrl = getWebhookUrl();
-  
-  if (!webhookUrl) {
-    return mockLearningPlan(skill);
-  }
+// -------------------- 5. LEARNING PLAN -------------------- //
+// Generate roadmap for learning any skill
+// Replace URL here if you have a specific learning-plan webhook
+const LEARNING_WEBHOOK_URL = 'http://localhost:5678/webhook/learning-plan'; // <-- Enter your URL here
 
+export async function generateLearningPlan(skill: string) {
   try {
-    return await callWebhook('learning-plan', { skill });
+    return await callWebhook(LEARNING_WEBHOOK_URL, { skill });
   } catch (error) {
     console.error('Learning plan error:', error);
     return mockLearningPlan(skill);
   }
 }
 
-// CV Optimization
-export async function optimizeCV(cvData: object): Promise<{
-  optimizedSummary: string;
-  skillSuggestions: string[];
-  improvementTips: string[];
-  atsScore: number;
-}> {
-  const webhookUrl = getWebhookUrl();
-  
-  if (!webhookUrl) {
-    return mockCVOptimization();
-  }
+// -------------------- 6. CV OPTIMIZATION -------------------- //
+// Optimize CV (skills, ATS score, tips)
+// Replace URL here if you have a specific cv-optimize webhook
+const CV_WEBHOOK_URL = 'http://localhost:5678/webhook/cv-optimize'; // <-- Enter your URL here
 
+export async function optimizeCV(cvData: object) {
   try {
-    return await callWebhook('cv-optimize', { cvData });
+    return await callWebhook(CV_WEBHOOK_URL, { cvData });
   } catch (error) {
     console.error('CV optimization error:', error);
     return mockCVOptimization();
   }
 }
 
-// Mock responses for when webhook is not configured
+// =================== MOCK RESPONSES =================== //
+// When your webhook is not ready yet, these allow UI to work
 function mockAIResponse(messages: AIMessage[]): AIResponse {
   const lastMessage = messages[messages.length - 1]?.content || '';
   return {
-    content: `This is a simulated response to: "${lastMessage.slice(0, 50)}..."\n\nTo get real AI responses, configure your n8n webhook URL in Settings. Your n8n workflow should:\n\n1. Receive the messages array\n2. Call Gemini and DeepSeek APIs in parallel\n3. Compare responses and select the best one\n4. Return both responses for toggle functionality`,
+    content: `Simulated response to: "${lastMessage.slice(0, 50)}..."`,
     model: 'gemini',
-    alternativeContent: `Alternative response from DeepSeek:\n\nThis demonstrates the dual-AI comparison feature. In production, both models process your query simultaneously, and the best response is auto-selected based on quality metrics.`,
+    alternativeContent: `Alternative response from DeepSeek (simulated)`,
     alternativeModel: 'deepseek',
   };
 }
 
 function mockDecisionAnalysis(problem: string) {
   return {
-    pros: [
-      'Increased efficiency and productivity',
-      'Cost savings in the long term',
-      'Better user experience',
-      'Competitive advantage in the market',
-    ],
-    cons: [
-      'Initial investment required',
-      'Learning curve for the team',
-      'Potential integration challenges',
-    ],
-    risks: [
-      'Technology may become outdated',
-      'Dependency on third-party services',
-    ],
-    benefits: [
-      'Scalable solution for future growth',
-      'Modern architecture enabling faster development',
-      'Better maintainability and code quality',
-    ],
-    recommendation: `Based on the analysis of "${problem.slice(0, 30)}...", proceeding is recommended. Configure your n8n webhook for real AI-powered analysis.`,
+    pros: ['Increased efficiency', 'Cost savings', 'Better UX', 'Competitive advantage'],
+    cons: ['Initial investment', 'Learning curve', 'Integration challenges'],
+    risks: ['Tech may become outdated', 'Third-party dependency'],
+    benefits: ['Scalable solution', 'Faster development', 'Better maintainability'],
+    recommendation: `Proceeding is recommended for "${problem.slice(0, 30)}..."`,
     confidence: 85,
   };
 }
@@ -229,19 +154,9 @@ function mockDecisionAnalysis(problem: string) {
 function mockDocumentAnalysis(content: string) {
   const wordCount = content.split(/\s+/).length || 1247;
   return {
-    summary: 'This document discusses strategies for improving software development practices. Configure your n8n webhook in Settings for real AI-powered document analysis.',
-    keyPoints: [
-      'Code reviews should focus on knowledge sharing',
-      'Automated tests provide confidence for changes',
-      'CI/CD pipelines reduce deployment friction',
-      'Documentation is a first-class citizen',
-    ],
-    actionItems: [
-      'Implement automated testing for critical paths',
-      'Set up code review guidelines',
-      'Configure CI/CD pipeline',
-      'Schedule team retrospectives',
-    ],
+    summary: 'Document analysis simulated.',
+    keyPoints: ['Code reviews', 'Automated tests', 'CI/CD pipelines', 'Documentation'],
+    actionItems: ['Automated testing', 'Code review', 'CI/CD setup', 'Team retrospectives'],
     sentiment: 'positive' as const,
     wordCount,
     readingTime: `${Math.ceil(wordCount / 200)} min`,
@@ -250,27 +165,14 @@ function mockDocumentAnalysis(content: string) {
 
 function mockReportAnalysis() {
   return {
-    overview: 'The report indicates strong performance. Configure your n8n webhook in Settings for real AI-powered report analysis with data extraction.',
+    overview: 'Report analysis simulated.',
     highlights: [
-      { title: 'Revenue Growth', value: '$2.4M', trend: 'up', change: '+23%' },
-      { title: 'Active Users', value: '145K', trend: 'up', change: '+18%' },
-      { title: 'CAC', value: '$42', trend: 'down', change: '-15%' },
-      { title: 'Retention Rate', value: '94%', trend: 'up', change: '+5%' },
+      { title: 'Revenue', value: '$2.4M', trend: 'up', change: '+23%' },
+      { title: 'Users', value: '145K', trend: 'up', change: '+18%' },
     ],
-    insights: [
-      'Mobile traffic increased by 45%',
-      'Enterprise segment showing highest growth',
-      'Customer lifetime value improved',
-    ],
-    recommendations: [
-      'Increase mobile investment',
-      'Expand enterprise sales team',
-      'Implement advanced analytics',
-    ],
-    risks: [
-      'Increased competition in SMB segment',
-      'Single payment provider dependency',
-    ],
+    insights: ['Mobile traffic up', 'Enterprise growth', 'CLV improved'],
+    recommendations: ['Invest mobile', 'Expand sales', 'Advanced analytics'],
+    risks: ['Competition', 'Single provider dependency'],
   };
 }
 
@@ -280,58 +182,20 @@ function mockLearningPlan(skill: string) {
     level: 'beginner' as const,
     estimatedTime: '3-4 months',
     roadmap: [
-      {
-        id: '1',
-        title: 'Foundation & Basics',
-        description: 'Learn core concepts, syntax, and fundamental principles',
-        duration: '2-3 weeks',
-        resources: ['Official Documentation', 'Interactive Tutorials', 'YouTube Courses'],
-        completed: false,
-      },
-      {
-        id: '2',
-        title: 'Hands-on Practice',
-        description: 'Build small projects to reinforce learning',
-        duration: '3-4 weeks',
-        resources: ['Practice Platforms', 'Code Challenges', 'Mini Projects'],
-        completed: false,
-      },
-      {
-        id: '3',
-        title: 'Intermediate Concepts',
-        description: 'Dive deeper into advanced features and patterns',
-        duration: '4-5 weeks',
-        resources: ['Advanced Courses', 'Technical Books', 'Community Forums'],
-        completed: false,
-      },
-      {
-        id: '4',
-        title: 'Real-world Projects',
-        description: 'Apply knowledge to production-ready applications',
-        duration: '4-6 weeks',
-        resources: ['Open Source Contributions', 'Portfolio Projects', 'Freelance Work'],
-        completed: false,
-      },
+      { id: '1', title: 'Basics', description: 'Learn fundamentals', duration: '2-3 weeks', resources: ['Docs', 'Tutorials'], completed: false },
+      { id: '2', title: 'Practice', description: 'Small projects', duration: '3-4 weeks', resources: ['Code Challenges'], completed: false },
+      { id: '3', title: 'Intermediate', description: 'Advanced patterns', duration: '4-5 weeks', resources: ['Books', 'Courses'], completed: false },
+      { id: '4', title: 'Projects', description: 'Real apps', duration: '4-6 weeks', resources: ['Open Source', 'Portfolio'], completed: false },
     ],
-    tips: [
-      'Dedicate at least 1-2 hours daily for consistent progress',
-      'Build projects while learning, not after',
-      'Join communities and engage with other learners',
-      'Document your journey and teach others',
-      'Review and revise previous topics regularly',
-    ],
+    tips: ['1-2 hrs daily', 'Build while learning', 'Join communities', 'Document journey', 'Review regularly'],
   };
 }
 
 function mockCVOptimization() {
   return {
-    optimizedSummary: 'Configure your n8n webhook in Settings for AI-powered CV optimization with Gemini and DeepSeek.',
+    optimizedSummary: 'Simulated CV optimization.',
     skillSuggestions: ['TypeScript', 'Cloud Architecture', 'System Design'],
-    improvementTips: [
-      'Add quantifiable achievements',
-      'Use action verbs to start bullet points',
-      'Include relevant keywords for ATS',
-    ],
+    improvementTips: ['Quantifiable achievements', 'Action verbs', 'Relevant keywords'],
     atsScore: 75,
   };
 }
