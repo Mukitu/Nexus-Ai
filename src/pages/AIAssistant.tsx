@@ -14,6 +14,7 @@ import {
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { cn } from '@/lib/utils';
+import { sendAIMessage, AIMessage } from '@/services/n8nService';
 import { toast } from 'sonner';
 
 interface Message {
@@ -21,7 +22,9 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  model?: 'gemini';
   alternativeResponse?: string;
+  alternativeModel?: 'gemini';
 }
 
 const suggestedPrompts = [
@@ -48,33 +51,6 @@ export default function AIAssistant() {
     scrollToBottom();
   }, [messages]);
 
-  // Hugging Face API call
-  const sendAIMessage = async (userMessage: string) => {
-    const API_URL = 'https://api-inference.huggingface.co/models/allura-forge/Llama-3.3-8B-Instruct';
-    const TOKEN = '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'; // তোমার Fine-grained token
-
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: userMessage,
-        parameters: { max_new_tokens: 250 },
-      }),
-    });
-
-    if (!res.ok) {
-      throw new Error('Failed to get AI response');
-    }
-
-    const data = await res.json();
-    // Hugging Face এর output format অনুযায়ী message content
-    const text = Array.isArray(data) && data[0]?.generated_text ? data[0].generated_text : '';
-    return text;
-  };
-
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -90,19 +66,25 @@ export default function AIAssistant() {
     setIsLoading(true);
 
     try {
-      const responseText = await sendAIMessage(userMessage.content);
+      const apiMessages: AIMessage[] = [
+        ...messages.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user' as const, content: userMessage.content },
+      ];
+
+      const response = await sendAIMessage(apiMessages);
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: responseText,
+        content: response.content,
         timestamp: new Date(),
+        model: response.model,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       toast.error('Failed to get AI response', {
-        description: 'Check your Hugging Face token and model',
+        description: 'Please check your API configuration',
       });
     } finally {
       setIsLoading(false);
@@ -125,7 +107,9 @@ export default function AIAssistant() {
 
   const handleVoiceInput = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      toast.error('Voice input not supported', { description: 'Your browser does not support speech recognition' });
+      toast.error('Voice input not supported', {
+        description: 'Your browser does not support speech recognition',
+      });
       return;
     }
 
@@ -137,7 +121,7 @@ export default function AIAssistant() {
     setIsListening(true);
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-
+    
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.lang = 'en-US';
@@ -166,7 +150,7 @@ export default function AIAssistant() {
       <div className="animate-fade-in h-[calc(100vh-8rem)] flex flex-col">
         <PageHeader
           title="AI Personal Assistant"
-          description="Powered by Hugging Face Llama-3.3-8B-Instruct"
+          description="Powered by Hugging Face LLaMA 3.3"
           badge="AI"
         />
 
@@ -198,43 +182,56 @@ export default function AIAssistant() {
               messages.map((message) => (
                 <div
                   key={message.id}
-                  className={cn('flex gap-4 animate-slide-up', message.role === 'user' ? 'flex-row-reverse' : '')}
+                  className={cn(
+                    'flex gap-4 animate-slide-up',
+                    message.role === 'user' ? 'flex-row-reverse' : ''
+                  )}
                 >
                   <div
                     className={cn(
                       'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
-                      message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
                     )}
                   >
-                    {message.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
+                    {message.role === 'user' ? (
+                      <User className="w-5 h-5" />
+                    ) : (
+                      <Bot className="w-5 h-5" />
+                    )}
                   </div>
-                  <div className={cn('flex-1 max-w-2xl', message.role === 'user' ? 'text-right' : '')}>
+                  <div
+                    className={cn(
+                      'flex-1 max-w-2xl',
+                      message.role === 'user' ? 'text-right' : ''
+                    )}
+                  >
                     <div
                       className={cn(
                         'inline-block p-4 rounded-xl',
-                        message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                        message.role === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
                       )}
                     >
                       <p className="whitespace-pre-wrap text-left">{message.content}</p>
                     </div>
-                    {message.role === 'assistant' && message.alternativeResponse && (
+                    {message.role === 'assistant' && (
                       <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs text-muted-foreground">Hugging Face</span>
                         <button
-                          onClick={() => toggleAlternative(message.id)}
-                          className="flex items-center gap-1 text-xs text-primary hover:underline"
+                          onClick={() => handleCopy(message.content, message.id)}
+                          className="p-1 hover:bg-muted rounded"
                         >
-                          {showAlternative[message.id] ? (
-                            <ToggleRight className="w-4 h-4" />
+                          {copiedId === message.id ? (
+                            <Check className="w-4 h-4 text-success" />
                           ) : (
-                            <ToggleLeft className="w-4 h-4" />
+                            <Copy className="w-4 h-4 text-muted-foreground" />
                           )}
-                          {showAlternative[message.id] ? 'Show primary' : 'View alternative'}
                         </button>
                       </div>
                     )}
-                    <button onClick={() => handleCopy(message.content, message.id)} className="p-1 hover:bg-muted rounded mt-1">
-                      {copiedId === message.id ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
-                    </button>
                   </div>
                 </div>
               ))
@@ -248,8 +245,14 @@ export default function AIAssistant() {
                   <div className="inline-block p-4 rounded-xl bg-muted">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                      <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                      <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                      <span
+                        className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                        style={{ animationDelay: '0.2s' }}
+                      />
+                      <span
+                        className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                        style={{ animationDelay: '0.4s' }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -263,7 +266,10 @@ export default function AIAssistant() {
             <div className="flex items-end gap-3">
               <button
                 onClick={handleVoiceInput}
-                className={cn('btn-secondary p-3', isListening && 'bg-primary text-primary-foreground')}
+                className={cn(
+                  'btn-secondary p-3',
+                  isListening && 'bg-primary text-primary-foreground'
+                )}
               >
                 {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
@@ -282,12 +288,16 @@ export default function AIAssistant() {
                   rows={1}
                 />
               </div>
-              <button onClick={handleSend} disabled={!input.trim() || isLoading} className="btn-primary p-3 disabled:opacity-50 disabled:cursor-not-allowed">
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading}
+                className="btn-primary p-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <Send className="w-5 h-5" />
               </button>
             </div>
             <p className="text-xs text-muted-foreground text-center mt-3">
-              AI responses are generated via Hugging Face API. Your data stays local.
+              AI responses are generated via Hugging Face LLaMA 3.3 API. Your data stays local.
             </p>
           </div>
         </div>
